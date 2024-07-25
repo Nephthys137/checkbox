@@ -157,8 +157,9 @@ aihao:
 hbooker:
   token:
   account:
+  ua:
   device_token: ciweimao_
-  app_version: 2.9.297
+  app_version: 2.9.329
   book_id:
   reader_id:
   buy_list:

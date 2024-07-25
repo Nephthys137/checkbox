@@ -1,5 +1,6 @@
 login_token = config.hbooker.token
 account = config.hbooker.account
+ua = config.hbooker.ua.split(",")
 device_token = config.hbooker.device_token
 app_version = config.hbooker.app_version
 book_id = config.hbooker.book_id
@@ -72,7 +73,7 @@ function post(options) {
             method: "post",
             data: JsonToUrl(data),
             headers: {
-                "user-agent": `Android  com.kuangxiangciweimao.novel  ${app_version},Xiaomi, Mi 12, 31, 12`
+                "user-agent": `Android  com.kuangxiangciweimao.novel  ${app_version},${ua[1]},${ua[2]},${ua[3]},${ua[4]}`
             }
         })
             .then((response) => {
@@ -109,7 +110,18 @@ const book = {
     ]
 }
 
-const bbsId = ["1093254", "1093253", "1093252", "1093225", "1093198", "1093197", "1093196", "1093194", "1093195", "1093181", "1093180", "1093170", "1093150", "1093124", "1093098", "1093096", "1093035", "1093034", "1093033", "1093031", "1093003", "1092970", "1092954", "1092955", "1092929", "1092928", "1092926", "1092924", "1092925", "1092914", "1092905", "1092893", "1092890", "1092886", "1092885", "1092884", "1092882", "1092881", "1092880", "1092879", "1092878", "1092845", "1092838", "1092837", "1092763", "1092762", "1092756", "1092741", "1092740", "1092720", "1092719", "1092706", "1092682", "1092676", "1092644", "1092643", "1092638", "1092637", "1092636", "1092634", "1092633", "1092628", "1092620", "1092602", "1092601", "1092595", "1092592", "1092586", "1092585", "1092578", "1092526", "1092524", "1092522", "1092521", "1092520", "1092518", "1092507", "1092509", "1092508", "1092505", "1092469", "1092452", "1092442", "1092418", "1092371", "1092370", "1092369", "1092368", "1092367", "1092349", "1092343", "1092337", "1092328", "1092299", "1092220", "1092219", "1092197", "1092176", "1092148", "1092147"]
+async function getBbsId() {
+    return await post({
+        url: "bbs/get_bbs_list",
+        data: {
+            bbs_type: 5,
+            count: 10,
+            page: 0
+        }
+    }).then((res) => {
+        return res;
+    })
+}
 
 //书架两本
 var shelfbook = async function() {
@@ -331,11 +343,26 @@ var addb = async function() {
     });
 };
 
+//分享插画区帖子
+async function share_bbs() {
+    let random = Math.floor(Math.random() * 10);
+    let bbs_list = (await getBbsId()).bbs_list;
+    let bbs_id = bbs_list[random].bbs_id;
+    return await post({
+        url: "bbs/share_bbs",
+        data: {
+            bbs_id: bbs_id
+        }
+    }).then((res) => {
+        return res;
+    })
+}
+
 //点赞5个插画区帖子
-var dianzan = async function(a) {
-    for (let i = 1; i <= 5; i++) {
-        let random = Math.floor(Math.random() * 99);
-        let bbs_id = bbsId[random];
+async function dianzan() {
+    let bbs_list = (await getBbsId()).bbs_list;
+    for (let i = 0; i < 5; i++) {
+        let bbs_id = bbs_list[i].bbs_id;
         await post({
             url: `bbs/unlike_bbs`,
             data: {
@@ -355,7 +382,24 @@ var dianzan = async function(a) {
             }
         })
     }
-};
+}
+
+//在插画区评论3条帖子
+async function pl() {
+    let bbs_list = (await getBbsId()).bbs_list;
+    for (let i = 1; i <= 3; i++) {
+        let bbs_id = bbs_list[i].bbs_id;
+        await post({
+            url: "bbs/add_bbs_comment",
+            data: {
+                bbs_id: bbs_id,
+                comment_content: "#(滑稽)"
+            }
+        })
+        await sleep(5000);
+    }
+}
+
 
 //任务列表
 var gettask = async function() {
@@ -371,15 +415,18 @@ async function ce() {
     let res = await gettask();
     let a = res.data.daily_task_list[2].task_type;
     switch (a) {
-        case "21":
-            await dianzan("like");
-            break; //点赞5个插画区帖子
         case "19":
             await addb();
             break; //浏览插画区5min
         case "20":
             await share_bbs();
             break; //分享插画区帖子
+        case "21":
+            await dianzan("like");
+            break; //点赞5个插画区帖子
+        case "22":
+            await pl();
+            break; //在插画区评论3条帖子
     }
 }
 
